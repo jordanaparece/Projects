@@ -1,0 +1,154 @@
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <ctime>
+#include <cstdlib>
+#include <limits>
+
+using namespace std;
+
+void printBoard(const vector<vector<char>>& board, const vector<vector<bool>>& revealed) {
+    for (int i = 0; i < board.size(); ++i) {
+        for (int j = 0; j < board[i].size(); ++j) {
+            if (revealed[i][j]) {
+                cout << board[i][j] << " ";
+            } else {
+                cout << "* ";
+            }
+        }
+        cout << endl;
+    }
+}
+
+bool isValidSize(int size) {
+    return size % 2 == 0;
+}
+
+bool isValidCoordinate(int x, int y, int size) {
+    return x >= 0 && x < size && y >= 0 && y < size;
+}
+
+bool isDifferentCard(int x1, int y1, int x2, int y2) {
+    return !(x1 == x2 && y1 == y2);
+}
+
+void getCoordinates(int& x, int& y, int size, const string& prompt) {
+    while (true) {
+        cout << prompt;
+        if (cin >> x >> y && isValidCoordinate(x, y, size)) {
+            break;
+        } else {
+            cout << "Invalid input. Please enter valid coordinates." << endl;
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        }
+    }
+}
+
+void useHint(const vector<vector<char>>& board, const vector<vector<bool>>& revealed, int size) {
+    cout << "Hint: ";
+    for (int i = 0; i < size; ++i) {
+        for (int j = 0; j < size; ++j) {
+            if (!revealed[i][j]) {
+                cout << "(" << i << ", " << j << ") ";
+                return;
+            }
+        }
+    }
+    cout << "No more hints available." << endl;
+}
+
+int main() {
+    srand(time(0));
+
+    int size;
+    cout << "Enter an even size for the game board: ";
+    cin >> size;
+
+    while (!isValidSize(size)) {
+        cout << "Please enter an even number: ";
+        cin >> size;
+    }
+
+    vector<vector<char>> board(size, vector<char>(size));
+    vector<vector<bool>> revealed(size, vector<bool>(size, false));
+
+    vector<char> letters;
+    for (char letter = 'A'; letter < 'A' + size * size / 2; ++letter) {
+        letters.push_back(letter);
+        letters.push_back(letter);
+    }
+
+    random_shuffle(letters.begin(), letters.end());
+    for (int i = 0; i < size; ++i) {
+        for (int j = 0; j < size; ++j) {
+            board[i][j] = letters[i * size + j];
+        }
+    }
+
+    for (auto& row : revealed) {
+        fill(row.begin(), row.end(), true);
+    }
+    printBoard(board, revealed);
+    cout << "Memorize the board! Press enter when ready...";
+    cin.ignore();
+    cin.get();
+
+    for (auto& row : revealed) {
+        fill(row.begin(), row.end(), false);
+    }
+
+    int moves = 0, matches = 0, hintsUsed = 0;
+    while (true) {
+        printBoard(board, revealed);
+
+        int x1, y1, x2, y2;
+        getCoordinates(x1, y1, size, "Enter the coordinates of the first card (row col): ");
+        getCoordinates(x2, y2, size, "Enter the coordinates of the second card (row col): ");
+
+        while (!isDifferentCard(x1, y1, x2, y2)) {
+            cout << "You have selected the same card. Please select a different card." << endl;
+            getCoordinates(x2, y2, size, "Enter the coordinates of the second card (row col): ");
+        }
+
+        if (board[x1][y1] == board[x2][y2]) {
+            cout << "Match found!" << endl;
+            revealed[x1][y1] = true;
+            revealed[x2][y2] = true;
+            matches++;
+        } else {
+            cout << "No match. Try again." << endl;
+        }
+
+        moves++;
+
+        bool allRevealed = true;
+        for (int i = 0; i < size; ++i) {
+            for (int j = 0; j < size; ++j) {
+                if (!revealed[i][j]) {
+                    allRevealed = false;
+                    break;
+                }
+            }
+            if (!allRevealed) break;
+        }
+
+        if (allRevealed) {
+            cout << "Congratulations! You completed the game in " << moves << " moves with " << matches << " matches." << endl;
+            int score = matches * 100 - moves * 10 - hintsUsed * 50;
+            cout << "Your score is: " << score << endl;
+            break;
+        }
+
+        char hint;
+        cout << "Would you like a hint? (y/n): ";
+        cin >> hint;
+        if (hint == 'y' || hint == 'Y') {
+            useHint(board, revealed, size);
+            hintsUsed++;
+        }
+    }
+
+    return 0;
+}
+
