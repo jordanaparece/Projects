@@ -1,0 +1,139 @@
+#include <iostream>
+#include <vector>
+#include <cstdlib>
+#include <ctime>
+
+using namespace std;
+
+class MinesGame {
+public:
+    MinesGame(int size, int mines) : gridSize(size), numMines(mines), gameOver(false) {
+        initializeGrid();
+        placeMines();
+    }
+
+    void play() {
+        while (!gameOver) {
+            int row, col;
+            cout << "Enter row and column to reveal (0-" << gridSize - 1 << "): ";
+            cin >> row >> col;
+
+            if (!isValidMove(row, col)) {
+                cout << "Invalid move. Try again." << std::endl;
+                continue;
+            }
+
+            revealCell(row, col);
+            printGrid();
+            checkGameOver();
+        }
+
+        if (gameWon()) {
+            cout << "Congratulations! You've cleared all non-mine cells!" << std::endl;
+        } else {
+            cout << "Boom! You hit a mine. Game over." << std::endl;
+        }
+    }
+
+private:
+    int gridSize;
+    int numMines;
+    bool gameOver;
+    vector<vector<char>> grid;
+    vector<vector<bool>> revealed;
+
+    void initializeGrid() {
+        grid.resize(gridSize, vector<char>(gridSize, '-'));
+        revealed.resize(gridSize, vector<bool>(gridSize, false));
+    }
+
+    void placeMines() {
+        srand(time(nullptr));
+        int minesPlaced = 0;
+        while (minesPlaced < numMines) {
+            int row = rand() % gridSize;
+            int col = rand() % gridSize;
+            if (grid[row][col] != '*') {
+                grid[row][col] = '*';
+                minesPlaced++;
+            }
+        }
+    }
+
+    void revealCell(int row, int col) {
+        if (grid[row][col] == '*') {
+            gameOver = true;
+            return;
+        }
+
+        int adjacentMines = countAdjacentMines(row, col);
+        grid[row][col] = '0' + adjacentMines;
+        revealed[row][col] = true;
+    }
+
+    int countAdjacentMines(int row, int col) {
+        int count = 0;
+        for (int i = -1; i <= 1; i++) {
+            for (int j = -1; j <= 1; j++) {
+                int newRow = row + i;
+                int newCol = col + j;
+                if (newRow >= 0 && newRow < gridSize && newCol >= 0 && newCol < gridSize && grid[newRow][newCol] == '*') {
+                    count++;
+                }
+            }
+        }
+        return count;
+    }
+
+    bool isValidMove(int row, int col) {
+        return row >= 0 && row < gridSize && col >= 0 && col < gridSize && !revealed[row][col];
+    }
+
+    void printGrid() {
+        for (int i = 0; i < gridSize; i++) {
+            for (int j = 0; j < gridSize; j++) {
+                if (revealed[i][j]) {
+                    cout << grid[i][j] << " ";
+                } else {
+                    cout << "- ";
+                }
+            }
+            cout << endl;
+        }
+    }
+
+    void checkGameOver() {
+        for (int i = 0; i < gridSize; i++) {
+            for (int j = 0; j < gridSize; j++) {
+                if (grid[i][j] != '*' && !revealed[i][j]) {
+                    return;
+                }
+            }
+        }
+        gameOver = true;
+    }
+
+    bool gameWon() {
+        for (int i = 0; i < gridSize; i++) {
+            for (int j = 0; j < gridSize; j++) {
+                if (grid[i][j] != '*' && !revealed[i][j]) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+};
+
+int main() {
+    int size, mines;
+    cout << "Enter grid size: ";
+    cin >> size;
+    cout << "Enter number of mines: ";
+    cin >> mines;
+
+    MinesGame game(size, mines);
+    game.play();
+
+    return 0;
+}
