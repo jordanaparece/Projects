@@ -1,0 +1,108 @@
+/*  insert comments here */
+
+#include "CardDeck.h"   // class definition for CardDeck used below
+#include <string>
+#include <iostream>
+
+using namespace std;
+
+int dealCard() {
+	int card = rand() % 13; // used the value 13 it ensures a random number is within range 0-12, per request of the write-up
+	// https://www.geeksforgeeks.org/rand-and-srand-in-ccpp/
+	return card;
+}
+string getCardFace(int value) {
+	const char *card_faces[] = {"2", "3", "4", "5", "6", "7", "8", "9", "10", "Jack", "Queen", "King", "Ace"};
+	return card_faces[value]; // function to retrieve the values of each possible card, and return the card at the index
+}
+
+int dealerWins = 0;
+int playerWins = 0; // initializing the win counters to 0
+
+void playBlackJack() {
+
+	CardDeck deck;
+	deck.shuffle(); // shuffle the deck each time
+
+	int values[] = {2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10, 11};
+
+	// each card, for the dealer and player, must be random in the array of values
+	// Therefore, both of their cards are assigned to the randomly dealt card (dealCard) at some index in the array (values)
+
+	int dealer_card1 = values[dealCard()]; 
+	int dealer_card2 = values[dealCard()];
+	int dealer_total = dealer_card1 + dealer_card2; //running total to determine if player is o/u 21
+
+	int player_card1 = values[dealCard()];
+	int player_card2 = values[dealCard()];
+	int player_total = player_card1 + player_card2;
+
+	cout << "Dealer cards are: ? (face down), " << getCardFace(dealer_card2) << " (face up)" << endl;
+	cout << "Your cards are: " << getCardFace(player_card1) << " (face down), " << getCardFace(player_card2) << " (face up)" << endl;
+
+
+	while (player_total <= 21) {
+		string hs;
+		cout << "Would you like to (1) hit or (2) stand: ";
+		cin >> hs;
+
+		if (hs == "1") {
+			int newCard = values[dealCard()]; // give a new card to the player, which is from the array of values
+			player_total += newCard; // running total
+			cout << "Your new card is: " << getCardFace(newCard) << endl;
+		}
+		else if (hs == "2") {
+			break;
+		}
+		else {
+			cout << "Invalid choice. Please enter a 1 or a 2." << endl;
+		}
+	}
+	while (dealer_total < 17) {
+		int newCard = values[dealCard()];
+		dealer_total += newCard;
+		cout << "Dealer draws: " << getCardFace(newCard) << endl;
+	}
+	if (player_total > 21 || (dealer_total <= 21 && dealer_total > player_total)) {
+		cout << "Dealer wins!" << endl;
+		dealerWins++; // increment the win
+	}
+	else if (dealer_total > 21 || player_total > dealer_total) {
+		cout << "Player wins!" << endl;
+		playerWins++;
+	}
+	else {
+		cout << "It's a tie!" << endl;
+	}
+	cout << "Dealer - " << dealerWins << ", Guest - " << playerWins << endl;
+
+}
+int main() {	
+
+	CardDeck * deck; // create pointer of deck
+
+	deck = new CardDeck(10); // new instance of the deck of size 10, per request
+	
+	cout << "Testing shuffle..." << endl;
+
+	deck->printDeck();
+	deck->shuffle();
+	deck->printDeck();
+
+	cout << endl;
+
+	cout << "**DEBUG INFO**" << endl;
+
+	cout << "Are you ready to begin (y/n)? ";
+	char yn;
+	cin >> yn;
+
+	while (yn == 'y' || yn == 'Y') {
+
+		playBlackJack();
+
+		cout << "Would you like to start a new game (y/n)? ";
+		cin >> yn;
+	}
+	return 0;
+}
