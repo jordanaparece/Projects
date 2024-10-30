@@ -1,0 +1,68 @@
+// Lab 7:  N-queens using "constrained" backtracking 
+
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+int solutions = 0; // variable for boards considered
+int zerozero = 0; // variable for boards with 0,0
+
+bool isValid(const vector<int>& board, int currentCol) {
+    for (int i = 0; i < currentCol; i++) {
+        if (board[i] == board[currentCol] || 
+            (board[i] - board[currentCol] == i - currentCol) || 
+            (board[currentCol] - board[i] == i - currentCol)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void printBoard(const vector<int>& board) {
+    for (size_t i = 0; i < board.size(); i++) {
+        cout << board[i];
+        if (i < board.size() - 1) {
+            cout << ", ";
+        }
+    }
+    cout << endl;
+}
+
+void nqueens(vector<int>& board, int pos, int size) {
+    solutions++; // increments boards considered
+    if (pos == size) {
+        if (board[0] == 0) {
+            zerozero++; // increments 0,0 boards
+        }
+        printBoard(board);
+        return;
+    }
+
+    for (int i = 0; i < size; i++) {
+        board[pos] = i; // places queen at current position
+        if (isValid(board, pos)) { // recursion: places rest of the queens if the current position works
+            nqueens(board, pos + 1, size);
+        }
+    }
+    board[pos] = -1;
+	// backtracking 
+	// sets the position to -1 if there is no valid position
+	// goes back to previous column to check
+}
+
+int main(int argc, char* argv[]) {
+    if (argc != 2) {
+        return 1;
+    }
+
+    int size = stoi(argv[1]);
+    vector<int> board(size, -1);
+    nqueens(board, 0, size);
+
+    cerr << "... (there are " << solutions << " boards considered total, of which " << zerozero << " have queens at 0,0)" << endl;
+
+    return 0;
+}
+
+
