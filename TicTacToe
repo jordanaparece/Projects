@@ -1,0 +1,130 @@
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+int s;
+
+void print_board(char board[]) { 
+	for (int i = 0; i < s; i++) {
+		for (int j = 0; j < s; j++) {
+			cout << board[i*s+j] << ' ';
+		}
+		cout << endl;
+	}
+}
+
+bool check_winner(char board[]) {
+
+	bool xWins;
+	bool oWins;
+
+	for (int i = 0; i < s; i++) {
+		bool xRow = true;
+		bool oRow = true;
+		bool xColumn = true;
+		bool oColumn = true;
+
+		for (int j = 0; j < s; j++) {
+			if (board[i*s+j] != 'X') {
+				xRow = false;
+			}
+			if (board[i*s+j] != 'O') {
+				oRow = false;
+			}
+			if (board[j*s+i] != 'X') {
+				xColumn = false;
+			}
+			if (board[j*s+i] != 'O') {
+				oColumn = false;
+			}
+		}
+		if (xRow || xColumn) {
+			xWins = true;
+		}
+		if (oRow || oColumn) {
+			oWins = true;
+		}
+	}
+	bool diagonalWinX = true;
+	bool oppositeDiagonalWinX = true;
+	bool diagonalWinO = true;
+	bool oppositeDiagonalWinO = true;
+
+	for (int i = 0; i < s; i++) {
+		if (board[i*s+i] != 'X') {
+			diagonalWinX = false;
+		}
+		if (board[i*s+i] != 'O') {
+			diagonalWinO = false;
+		}
+		if (board[i*s+(s-1-i)] != 'X') {
+			oppositeDiagonalWinX = false;
+		}
+		if (board[i*s+(s-1-i)] != 'O') {
+			oppositeDiagonalWinO = false;
+		}
+	}
+	if (diagonalWinX || oppositeDiagonalWinX) {
+		xWins = true;
+	}
+	if (diagonalWinO || oppositeDiagonalWinO) {
+		oWins = true;
+	}
+	
+	if (xWins) {
+		cout << "X wins." << endl;
+	}
+	else if (oWins) {
+		cout << "O wins." << endl;
+	}
+	else {
+		cout << "Tie." << endl;
+	}
+
+	return xWins || oWins;
+}
+int main(int argc, char *argv[]) {
+	
+	int size;
+	cout << "Please enter a board size: ";
+	cin >> size;
+
+	int turn = 0;
+	char board[size * size]; // Size * size as advised by the help video
+	char player = 'X'; //Assuming the first player to go is the X
+
+	for (int i = 0; i < size * size; i++) { //size * size because this determines the amount of turns. For example, in a board of size 3, there are only 9 turns
+		
+		int x, y; //row and column variables
+		
+		while (true) { //Used a while loop because the program must continually prompt the user to enter values until loop ends
+
+			cout << "Player " << player << ": ";
+			cin >> x >> y;
+
+			if (x >= 0 && x < size && y >= 0 && y < size && board[x * size + y] == ' ') {
+				board[x * size + y] = player; //above function checks the range of the values entered by the user. If it passes, the board at x * size + y is assigned to the character of the player
+				break;
+			}
+			else {
+				cout << "Invalid move. Please try again." << endl;
+			}
+		}
+		print_board(board);
+
+		if (check_winner(board)) {
+			cout << "Player " << player << " wins" << endl;
+			break;
+		}
+		turn++; //Increment the turn every time
+
+		if (turn % 2 == 0) { 
+			player = 'X'; //if the turn value is even, then it is X's turn. Otherwise, it is O's turn
+		}
+		else {
+			player = 'O';
+		}
+	}
+	return 0;
+}
