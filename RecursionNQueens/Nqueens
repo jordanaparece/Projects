@@ -1,0 +1,59 @@
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+bool isValid(const vector<int>& board, int currentCol) {
+    // traverse the board
+    for (int i = 0; i < currentCol; i++) {
+        // arithmetic to check the same row or same diagonal
+        if (board[i] == board[currentCol] || 
+            (board[i] - board[currentCol] == i - currentCol) || 
+            (board[currentCol] - board[i] == i - currentCol)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void printBoard(const vector<int>& board) {
+    for (size_t i = 0; i < board.size(); i++) {
+        cout << board[i];
+        if (i < board.size() - 1) {
+            cout << ", ";
+        }
+    }
+    cout << endl;
+}
+
+void nqueens(vector<int>& board, int pos, int size) {
+    // base case
+    if (pos == size) {
+        if (isValid(board, size)) {
+            // if valid, print the board
+            printBoard(board);
+        }
+    }
+    else {
+        // traverses the board, placing a queen in each row
+        for (int i = 0; i < size; i++) {
+            board[pos] = i;
+            nqueens(board, pos + 1, size);
+        }
+    }
+    return;
+}
+
+int main(int argc, char* argv[]) {
+    if (argc != 2) {
+        return 1;
+        // terminates if arguments are not 2
+    }
+
+    int size = stoi(argv[1]);
+    // converts user argument to integer
+    vector<int> board(size, -1);
+    nqueens(board, 0, size);
+
+    return 0;
+}
