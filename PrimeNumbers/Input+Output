@@ -1,0 +1,26 @@
+// Input
+100
+2
+97
+98
+100000
+98
+99
+2000000
+1999993
+1999871
+1999734
+
+
+// Output
+not prime
+prime
+prime
+not prime
+not prime
+not prime
+not prime
+not prime
+prime
+prime
+not prime
