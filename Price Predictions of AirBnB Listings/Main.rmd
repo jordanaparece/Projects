@@ -1,0 +1,103 @@
+```{r}
+library(dplyr)
+library(tidymodels)
+library(tidyverse)
+library(recipes)
+library(ggplot2)
+library(regclass)
+library(rpart)
+library(rpart.plot)
+library(ranger)
+source("https://tiny.utk.edu/plot_centroids_table.R")
+
+listings <- read.csv("C:/Users/japar/OneDrive/Desktop/BAS 474/Project/austin_listings.csv")
+holdout <- read.csv("C:/Users/japar/OneDrive/Desktop/BAS 474/Project/holdout_x.csv")
+data_dict <- read.csv("C:/Users/japar/OneDrive/Desktop/BAS 474/Project/listings_data_dictionary.csv")
+```
+
+
+```{r}
+listings_clean <- listings |>
+  dplyr::select(price, accommodates, bedrooms, bathrooms, number_of_reviews) |>
+  filter(!is.na(price), !is.na(accommodates), !is.na(bedrooms), !is.na(bathrooms), !is.na(number_of_reviews))
+
+listings_clean <- listings_clean |>
+  mutate(price = as.numeric(gsub("[$,]", "", price))) |>
+  filter(price > 0)
+
+set.seed(123)
+data_split <- initial_split(listings_clean, prop = 0.8)
+train_data <- training(data_split)
+test_data <- testing(data_split)
+
+cluster_recipe <- recipe(~ accommodates + bedrooms + bathrooms + number_of_reviews, data = train_data) |>
+  step_normalize(all_numeric_predictors())
+
+set.seed(123)
+kmeans_spec <- kmeans(
+  cluster_recipe |>
+  prep() |>
+    bake(new_data = NULL), 
+    centers = 3)
+train_data$cluster <- factor(kmeans_spec$cluster)
+
+plot_centroids_table(kmeans_spec)
+
+ggplot(train_data, aes(x = accommodates, y = bedrooms, color = cluster)) +
+  geom_point() +
+  labs(title = "Cluster Visualization", x = "Accommodates", y = "Bedrooms") +
+  theme_minimal()
+
+cluster_summary <- train_data |>
+  group_by(cluster) |>
+  summarise(
+    accommodates_mean = mean(accommodates, na.rm = TRUE),
+    bedrooms_mean = mean(bedrooms, na.rm = TRUE),
+    bathrooms_mean = mean(bathrooms, na.rm = TRUE),
+    number_of_reviews_mean = mean(number_of_reviews, na.rm = TRUE)
+  )
+print(cluster_summary)
+
+
+rf_spec <- rand_forest(mtry = 3, trees = 500, min_n = 5) |>
+  set_mode("regression")
+
+
+model_recipe <- recipe(price ~ accommodates + bedrooms + bathrooms + number_of_reviews, data = train_data) |>
+  step_normalize(all_numeric_predictors())
+
+rf_workflow <- workflow() |>
+  add_model(rf_spec) |>
+  add_recipe(model_recipe)
+
+set.seed(123)
+folds <- vfold_cv(train_data, v = 5)
+rf_results <- fit_resamples(
+  rf_workflow,
+  resamples = folds
+)
+
+final_rf_fit <- finalize_workflow(rf_workflow, select_best(rf_results)) |>
+  fit(data = train_data)
+
+test_predictions <- predict(final_rf_fit, test_data) |>
+  bind_cols(test_data)
+
+
+test_results <- test_predictions |>
+  summarise(
+    rmse = sqrt(mean((price - .pred)^2)), # knowledge from BAS 471
+    rsq = cor(price, .pred)^2 # knowledge from BAS 471
+  )
+test_results
+
+holdout <- read.csv("C:/Users/japar/OneDrive/Desktop/BAS 474/Project/holdout_x.csv")
+
+holdout_predictions <- predict(final_rf_fit, new_data = holdout) |>
+  bind_cols(holdout) |>
+  select(id, price = .pred)
+holdout_predictions
+
+write.csv(holdout_predictions, "submit.csv", row.names = FALSE)
+```
+
